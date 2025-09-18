@@ -1,7 +1,7 @@
 services:
   - type: web
     name: dgtt-usager-service
-    runtime: java
+    env: java
     buildCommand: cd microservices/usager-service && ./mvnw clean package -DskipTests
     startCommand: cd microservices/usager-service && java -jar target/usager-service-1.0.0.jar
     envVars:
@@ -15,10 +15,12 @@ services:
         generateValue: true
       - key: JWT_EXPIRATION
         value: "86400"
+      - key: SERVER_PORT
+        value: "8080"
 
   - type: web
     name: dgtt-auto-ecole-service
-    runtime: java
+    env: java
     buildCommand: cd microservices/auto-ecole-service && ./mvnw clean package -DskipTests
     startCommand: cd microservices/auto-ecole-service && java -jar target/auto-ecole-service-1.0.0.jar
     envVars:
@@ -30,10 +32,12 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      - key: SERVER_PORT
+        value: "8080"
 
   - type: web
     name: dgtt-permis-service
-    runtime: java
+    env: java
     buildCommand: cd microservices/permis-service && ./mvnw clean package -DskipTests
     startCommand: cd microservices/permis-service && java -jar target/permis-service-1.0.0.jar
     envVars:
@@ -45,10 +49,12 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      - key: SERVER_PORT
+        value: "8080"
 
   - type: web
     name: dgtt-autres-service
-    runtime: java
+    env: java
     buildCommand: cd microservices/autres-service && ./mvnw clean package -DskipTests
     startCommand: cd microservices/autres-service && java -jar target/autres-service-1.0.0.jar
     envVars:
@@ -60,10 +66,12 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      - key: SERVER_PORT
+        value: "8080"
 
   - type: web
     name: dgtt-frontend
-    runtime: static
+    env: static
     buildCommand: cd frontend/react-app && npm install && npm run build
     staticPublishPath: frontend/react-app/build
     envVars:
