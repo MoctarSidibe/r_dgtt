@@ -1,0 +1,27 @@
+{
+  "datacenter": "dgtt-datacenter",
+  "data_dir": "/consul/data",
+  "log_level": "INFO",
+  "node_name": "dgtt-consul-1",
+  "server": true,
+  "bootstrap_expect": 1,
+  "bind_addr": "0.0.0.0",
+  "client_addr": "0.0.0.0",
+  "ui_config": {
+    "enabled": true
+  },
+  "connect": {
+    "enabled": true
+  },
+  "ports": {
+    "grpc": 8502
+  },
+  "acl": {
+    "enabled": true,
+    "default_policy": "deny",
+    "enable_token_persistence": true
+  },
+  "encrypt": "your-encryption-key-here",
+  "retry_join": ["127.0.0.1"],
+  "log_file": "/consul/logs/consul.log"
+}

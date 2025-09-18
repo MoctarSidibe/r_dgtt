@@ -1,0 +1,379 @@
+version: '3.8'
+
+services:
+  # Traefik API Gateway
+  traefik:
+    image: traefik:v2.10
+    container_name: dgtt-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./config/traefik/acme.json:/etc/traefik/acme.json
+    environment:
+      - TRAEFIK_LOG_LEVEL=INFO
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.dgtt-portail.com`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  # Consul Service Discovery
+  consul:
+    image: consul:1.16
+    container_name: dgtt-consul
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - CONSUL_CLIENT_INTERFACE=eth0
+    command: >
+      consul agent
+      -server
+      -bootstrap-expect=1
+      -ui
+      -client=0.0.0.0
+      -bind=0.0.0.0
+      -retry-join=consul
+      -data-dir=/consul/data
+      -datacenter=dgtt-datacenter
+      -node=dgtt-consul-1
+    volumes:
+      - consul-data:/consul/data
+      - ./config/consul:/consul/config:ro
+    networks:
+      - dgtt-network
+
+  # PostgreSQL Databases (4 services only)
+  postgres-usager:
+    image: postgres:15
+    container_name: dgtt-postgres-usager
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=usager_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_usager_data:/var/lib/postgresql/data
+      - ./databases/init/usager.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dgtt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dgtt_user -d usager_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgres-auto-ecole:
+    image: postgres:15
+    container_name: dgtt-postgres-auto-ecole
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=auto_ecole_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_auto_ecole_data:/var/lib/postgresql/data
+      - ./databases/init/auto-ecole.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dgtt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dgtt_user -d auto_ecole_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgres-permis:
+    image: postgres:15
+    container_name: dgtt-postgres-permis
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=permis_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_permis_data:/var/lib/postgresql/data
+      - ./databases/init/permis.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dgtt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dgtt_user -d permis_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgres-autres:
+    image: postgres:15
+    container_name: dgtt-postgres-autres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=autres_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_autres_data:/var/lib/postgresql/data
+      - ./databases/init/autres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dgtt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dgtt_user -d autres_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ELK Stack
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: dgtt-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - dgtt-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: dgtt-logstash
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./config/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./config/logstash/config:/usr/share/logstash/config:ro
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - dgtt-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: dgtt-kibana
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kibana.rule=Host(`kibana.dgtt-portail.com`)"
+      - "traefik.http.routers.kibana.service=kibana"
+      - "traefik.http.services.kibana.loadbalancer.server.port=5601"
+
+  # Microservices (4 core services only)
+  usager-service:
+    build:
+      context: ./microservices/usager-service
+      dockerfile: Dockerfile
+    container_name: dgtt-usager-service
+    restart: unless-stopped
+    depends_on:
+      - postgres-usager
+      - consul
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-usager:5432/usager_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - JWT_SECRET=your_jwt_secret_key_here_123456789
+      - JWT_EXPIRATION=86400000
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.usager.rule=Host(`api.dgtt-portail.com`) && PathPrefix(`/api/usager`)"
+      - "traefik.http.services.usager.loadbalancer.server.port=8080"
+
+  auto-ecole-service:
+    build:
+      context: ./microservices/auto-ecole-service
+      dockerfile: Dockerfile
+    container_name: dgtt-auto-ecole-service
+    restart: unless-stopped
+    depends_on:
+      - postgres-auto-ecole
+      - consul
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-auto-ecole:5432/auto_ecole_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - JWT_SECRET=your_jwt_secret_key_here_123456789
+      - JWT_EXPIRATION=86400000
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auto-ecole.rule=Host(`api.dgtt-portail.com`) && PathPrefix(`/api/auto-ecole`)"
+      - "traefik.http.services.auto-ecole.loadbalancer.server.port=8080"
+
+  permis-service:
+    build:
+      context: ./microservices/permis-service
+      dockerfile: Dockerfile
+    container_name: dgtt-permis-service
+    restart: unless-stopped
+    depends_on:
+      - postgres-permis
+      - consul
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-permis:5432/permis_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - JWT_SECRET=your_jwt_secret_key_here_123456789
+      - JWT_EXPIRATION=86400000
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.permis.rule=Host(`api.dgtt-portail.com`) && PathPrefix(`/api/permis`)"
+      - "traefik.http.services.permis.loadbalancer.server.port=8080"
+
+  autres-service:
+    build:
+      context: ./microservices/autres-service
+      dockerfile: Dockerfile
+    container_name: dgtt-autres-service
+    restart: unless-stopped
+    depends_on:
+      - postgres-autres
+      - consul
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-autres:5432/autres_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - JWT_SECRET=your_jwt_secret_key_here_123456789
+      - JWT_EXPIRATION=86400000
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.autres.rule=Host(`api.dgtt-portail.com`) && PathPrefix(`/api/autres`)"
+      - "traefik.http.services.autres.loadbalancer.server.port=8080"
+
+  # API Documentation
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: dgtt-swagger-ui
+    restart: unless-stopped
+    environment:
+      - SWAGGER_JSON=/swagger/swagger.json
+      - BASE_URL=/swagger
+    volumes:
+      - ./config/swagger:/swagger:ro
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.swagger.rule=Host(`api.dgtt-portail.com`) && PathPrefix(`/swagger`)"
+      - "traefik.http.services.swagger.loadbalancer.server.port=8080"
+
+  redoc:
+    image: redocly/redoc:latest
+    container_name: dgtt-redoc
+    restart: unless-stopped
+    environment:
+      - SPEC_URL=/swagger/swagger.json
+    volumes:
+      - ./config/swagger:/swagger:ro
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redoc.rule=Host(`api.dgtt-portail.com`) && PathPrefix(`/redoc`)"
+      - "traefik.http.services.redoc.loadbalancer.server.port=8080"
+
+  # Frontend
+  dgtt-frontend:
+    build:
+      context: ./frontend/react-app
+      dockerfile: Dockerfile
+    container_name: dgtt-frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=https://api.dgtt-portail.com
+      - REACT_APP_KIBANA_URL=https://kibana.dgtt-portail.com
+    networks:
+      - dgtt-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`dgtt-portail.com`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+  # OWASP Security Stack
+  modsecurity:
+    image: owasp/modsecurity:3.0-apache
+    container_name: dgtt-modsecurity
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./config/modsecurity/modsecurity.conf:/etc/modsecurity/modsecurity.conf:ro
+      - ./config/modsecurity/coreruleset:/etc/modsecurity/coreruleset:ro
+    networks:
+      - dgtt-network
+
+  fail2ban:
+    image: lscr.io/linuxserver/fail2ban:latest
+    container_name: dgtt-fail2ban
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Africa/Libreville
+    volumes:
+      - ./config/fail2ban:/config
+      - /var/log:/var/log:ro
+    networks:
+      - dgtt-network
+
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: dgtt-trivy
+    restart: unless-stopped
+    volumes:
+      - ./config/trivy/reports:/reports
+    networks:
+      - dgtt-network
+
+volumes:
+  consul-data:
+  elasticsearch-data:
+  postgres_usager_data:
+  postgres_auto_ecole_data:
+  postgres_permis_data:
+  postgres_autres_data:
+
+networks:
+  dgtt-network:
+    driver: bridge

@@ -1,0 +1,141 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/auto-ecole
+
+spring:
+  application:
+    name: auto-ecole-service
+  
+  profiles:
+    active: docker
+  
+  datasource:
+    url: jdbc:postgresql://postgres-auto-ecole:5432/auto_ecole_db
+    username: ${POSTGRES_USER:dgtt_user}
+    password: ${POSTGRES_PASSWORD:secure_password_123}
+    driver-class-name: org.postgresql.Driver
+    
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+    
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:your_email@gmail.com}
+    password: ${SMTP_PASSWORD:your_app_password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+            security: tls
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8080}
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8080/.well-known/jwks.json}
+
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:consul}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        service-name: ${spring.application.name}
+        health-check-interval: 30s
+        health-check-critical-timeout: 30s
+        health-check-timeout: 10s
+        prefer-ip-address: true
+        ip-address: ${spring.cloud.client.ip-address}
+        port: ${server.port}
+
+# Logging
+logging:
+  level:
+    ga.dgtt.autoecole: INFO
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /app/logs/auto-ecole-service.log
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Application specific configuration
+app:
+  notification:
+    email:
+      from: ${SMTP_FROM:noreply@dgtt-portail.com}
+    sms:
+      enabled: ${SMS_ENABLED:true}
+  
+  sms:
+    api:
+      key: ${SMS_API_KEY:simulation_key}
+      url: ${SMS_API_URL:https://api.airtel.ga/sms}
+    enabled: ${SMS_ENABLED:true}
+  
+  paiement:
+    airtel:
+      api:
+        key: ${AIRTEL_MONEY_API_KEY:simulation_key}
+        url: ${AIRTEL_MONEY_API_URL:https://api.airtel.ga/payment}
+    enabled: ${PAIEMENT_ENABLED:true}
+  
+  security:
+    jwt:
+      secret: ${JWT_SECRET:your_jwt_secret_key_here_make_it_very_long_and_secure}
+      expiration: ${JWT_EXPIRATION:86400}
+  
+  file:
+    upload:
+      path: ${FILE_UPLOAD_PATH:/app/uploads}
+      max-size: ${MAX_FILE_SIZE:10MB}
+  
+  audit:
+    retention:
+      days: ${AUDIT_RETENTION_DAYS:365}
+
+# OpenAPI documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    display-request-duration: true
+    display-operation-id: true
+    default-models-expand-depth: 3
+    default-model-expand-depth: 3

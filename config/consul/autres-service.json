@@ -1,0 +1,12 @@
+{
+  "service": {
+    "name": "autres-service",
+    "port": 8080,
+    "check": {
+      "http": "http://autres-service:8080/actuator/health",
+      "interval": "10s",
+      "timeout": "3s"
+    },
+    "tags": ["microservice", "external-partners", "interoperability"]
+  }
+}

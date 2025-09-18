@@ -1,0 +1,785 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "R-DGTT Portail API",
+    "description": "API du Portail R-DGTT - Ministère des Transports, de la Marine Marchande et de la Logistique du Gabon",
+    "version": "1.0.0",
+    "contact": {
+      "name": "DGTT Support",
+      "email": "support@dgtt-portail.com",
+      "url": "https://dgtt-portail.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.dgtt-portail.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Usager",
+      "description": "Gestion des utilisateurs et authentification"
+    },
+    {
+      "name": "Auto-École",
+      "description": "Gestion des auto-écoles et candidats"
+    },
+    {
+      "name": "Permis",
+      "description": "Gestion des permis de conduire et examens"
+    },
+    {
+      "name": "Autres",
+      "description": "Interopérabilité avec les partenaires externes"
+    }
+  ],
+  "paths": {
+    "/api/usager/auth/login": {
+      "post": {
+        "tags": ["Usager"],
+        "summary": "Connexion utilisateur",
+        "description": "Authentification d'un utilisateur avec nom d'utilisateur et mot de passe",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Identifiants invalides"
+          }
+        }
+      }
+    },
+    "/api/usager/auth/logout": {
+      "post": {
+        "tags": ["Usager"],
+        "summary": "Déconnexion utilisateur",
+        "description": "Déconnexion d'un utilisateur authentifié",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Déconnexion réussie"
+          }
+        }
+      }
+    },
+    "/api/usager/usagers": {
+      "get": {
+        "tags": ["Usager"],
+        "summary": "Liste des utilisateurs",
+        "description": "Récupère la liste de tous les utilisateurs",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Usager"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Usager"],
+        "summary": "Créer un utilisateur",
+        "description": "Crée un nouvel utilisateur",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUsagerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usager"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auto-ecole/auto-ecoles": {
+      "get": {
+        "tags": ["Auto-École"],
+        "summary": "Liste des auto-écoles",
+        "description": "Récupère la liste de toutes les auto-écoles",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Liste des auto-écoles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutoEcole"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Auto-École"],
+        "summary": "Créer une auto-école",
+        "description": "Crée une nouvelle auto-école",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAutoEcoleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Auto-école créée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoEcole"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auto-ecole/candidats": {
+      "get": {
+        "tags": ["Auto-École"],
+        "summary": "Liste des candidats",
+        "description": "Récupère la liste de tous les candidats",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Liste des candidats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Candidat"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Auto-École"],
+        "summary": "Enregistrer un candidat",
+        "description": "Enregistre un nouveau candidat",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCandidatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Candidat enregistré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Candidat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/permis/examens": {
+      "get": {
+        "tags": ["Permis"],
+        "summary": "Liste des examens",
+        "description": "Récupère la liste de tous les examens",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Liste des examens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Examen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Permis"],
+        "summary": "Créer un examen",
+        "description": "Crée un nouvel examen",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExamenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Examen créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Examen"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/autres/partenaires": {
+      "get": {
+        "tags": ["Autres"],
+        "summary": "Liste des partenaires externes",
+        "description": "Récupère la liste de tous les partenaires externes",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Liste des partenaires externes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PartenaireExterne"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Autres"],
+        "summary": "Ajouter un partenaire externe",
+        "description": "Ajoute un nouveau partenaire externe",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartenaireRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Partenaire ajouté avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartenaireExterne"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Nom d'utilisateur"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Mot de passe"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token JWT"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Durée de validité en secondes"
+          },
+          "user": {
+            "$ref": "#/components/schemas/Usager"
+          }
+        }
+      },
+      "Usager": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "prenom": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["ADMIN", "SEV", "SAF", "STIAS", "DGTT", "AUTO_ECOLE"]
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["ACTIF", "INACTIF", "BLOQUE"]
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateUsagerRequest": {
+        "type": "object",
+        "required": ["username", "email", "password", "nom", "prenom", "role"],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "prenom": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["ADMIN", "SEV", "SAF", "STIAS", "DGTT", "AUTO_ECOLE"]
+          }
+        }
+      },
+      "AutoEcole": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "proprietaireNom": {
+            "type": "string"
+          },
+          "proprietairePrenom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "adresse": {
+            "type": "string"
+          },
+          "ville": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["EN_ATTENTE", "APPROUVE", "REJETE", "SUSPENDU"]
+          },
+          "numeroDemande": {
+            "type": "string"
+          },
+          "qrCode": {
+            "type": "string"
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateAutoEcoleRequest": {
+        "type": "object",
+        "required": ["nom", "proprietaireNom", "proprietairePrenom", "email", "telephone", "adresse", "ville", "province"],
+        "properties": {
+          "nom": {
+            "type": "string"
+          },
+          "proprietaireNom": {
+            "type": "string"
+          },
+          "proprietairePrenom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "adresse": {
+            "type": "string"
+          },
+          "ville": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          }
+        }
+      },
+      "Candidat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "prenom": {
+            "type": "string"
+          },
+          "dateNaissance": {
+            "type": "string",
+            "format": "date"
+          },
+          "lieuNaissance": {
+            "type": "string"
+          },
+          "nationalite": {
+            "type": "string"
+          },
+          "categoriePermis": {
+            "type": "string",
+            "enum": ["A1", "A", "B", "C", "D", "E", "F", "G"]
+          },
+          "numeroLicence": {
+            "type": "string"
+          },
+          "numeroEvaluation": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["ENROLE", "EN_COURS", "REUSSI", "ECHEC"]
+          },
+          "montantPaiement": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "datePaiement": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "referencePaiement": {
+            "type": "string"
+          },
+          "qrCode": {
+            "type": "string"
+          },
+          "autoEcoleId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateCandidatRequest": {
+        "type": "object",
+        "required": ["nom", "prenom", "dateNaissance", "lieuNaissance", "categoriePermis", "autoEcoleId"],
+        "properties": {
+          "nom": {
+            "type": "string"
+          },
+          "prenom": {
+            "type": "string"
+          },
+          "dateNaissance": {
+            "type": "string",
+            "format": "date"
+          },
+          "lieuNaissance": {
+            "type": "string"
+          },
+          "nationalite": {
+            "type": "string",
+            "default": "Gabonaise"
+          },
+          "categoriePermis": {
+            "type": "string",
+            "enum": ["A1", "A", "B", "C", "D", "E", "F", "G"]
+          },
+          "autoEcoleId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Examen": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "numeroExamen": {
+            "type": "string"
+          },
+          "candidatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "autoEcoleId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "typeExamen": {
+            "type": "string",
+            "enum": ["CODE", "CRENEAU", "VILLE"]
+          },
+          "dateExamen": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lieuExamen": {
+            "type": "string"
+          },
+          "examinateurNom": {
+            "type": "string"
+          },
+          "examinateurPrenom": {
+            "type": "string"
+          },
+          "examinateurMatricule": {
+            "type": "string"
+          },
+          "note": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "nombreErreurs": {
+            "type": "integer"
+          },
+          "tempsRealise": {
+            "type": "integer"
+          },
+          "estReussi": {
+            "type": "boolean"
+          },
+          "commentaires": {
+            "type": "string"
+          },
+          "qrCode": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["PROGRAMME", "EN_COURS", "TERMINE", "ANNULE"]
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateExamenRequest": {
+        "type": "object",
+        "required": ["candidatId", "autoEcoleId", "typeExamen", "dateExamen", "lieuExamen", "examinateurNom", "examinateurPrenom"],
+        "properties": {
+          "candidatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "autoEcoleId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "typeExamen": {
+            "type": "string",
+            "enum": ["CODE", "CRENEAU", "VILLE"]
+          },
+          "dateExamen": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lieuExamen": {
+            "type": "string"
+          },
+          "examinateurNom": {
+            "type": "string"
+          },
+          "examinateurPrenom": {
+            "type": "string"
+          },
+          "examinateurMatricule": {
+            "type": "string"
+          }
+        }
+      },
+      "PartenaireExterne": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "typePartenaire": {
+            "type": "string",
+            "enum": ["DGDI", "POLICE", "CONTROLE_TECHNIQUE", "ASSURANCE", "DOUANES", "TRESOR_PUBLIC", "INTERPOL", "GRAND_PUBLIC"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "urlApi": {
+            "type": "string",
+            "format": "uri"
+          },
+          "cleApi": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["ACTIF", "INACTIF", "EN_MAINTENANCE"]
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreatePartenaireRequest": {
+        "type": "object",
+        "required": ["nom", "typePartenaire", "urlApi"],
+        "properties": {
+          "nom": {
+            "type": "string"
+          },
+          "typePartenaire": {
+            "type": "string",
+            "enum": ["DGDI", "POLICE", "CONTROLE_TECHNIQUE", "ASSURANCE", "DOUANES", "TRESOR_PUBLIC", "INTERPOL", "GRAND_PUBLIC"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "urlApi": {
+            "type": "string",
+            "format": "uri"
+          },
+          "cleApi": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+  # Core Microservices
+  usager-service:
+    build: ./microservices/usager-service
+    container_name: dgtt-usager-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-usager:5432/usager_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+    depends_on:
+      - postgres-usager
+    networks:
+      - dgtt-network
+
+  auto-ecole-service:
+    build: ./microservices/auto-ecole-service
+    container_name: dgtt-auto-ecole-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-auto-ecole:5432/auto_ecole_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+    depends_on:
+      - postgres-auto-ecole
+    networks:
+      - dgtt-network
+
+  permis-service:
+    build: ./microservices/permis-service
+    container_name: dgtt-permis-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-permis:5432/permis_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+    depends_on:
+      - postgres-permis
+    networks:
+      - dgtt-network
+
+  autres-service:
+    build: ./microservices/autres-service
+    container_name: dgtt-autres-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-autres:5432/autres_db
+      - SPRING_DATASOURCE_USERNAME=dgtt_user
+      - SPRING_DATASOURCE_PASSWORD=dgtt_password_123
+    depends_on:
+      - postgres-autres
+    networks:
+      - dgtt-network
+
+  # Databases
+  postgres-usager:
+    image: postgres:15-alpine
+    container_name: dgtt-postgres-usager
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=usager_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_usager_data:/var/lib/postgresql/data
+      - ./databases/init/usager.sql:/docker-entrypoint-initdb.d/usager.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - dgtt-network
+
+  postgres-auto-ecole:
+    image: postgres:15-alpine
+    container_name: dgtt-postgres-auto-ecole
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=auto_ecole_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_auto_ecole_data:/var/lib/postgresql/data
+      - ./databases/init/auto-ecole.sql:/docker-entrypoint-initdb.d/auto-ecole.sql:ro
+    ports:
+      - "5433:5432"
+    networks:
+      - dgtt-network
+
+  postgres-permis:
+    image: postgres:15-alpine
+    container_name: dgtt-postgres-permis
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=permis_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_permis_data:/var/lib/postgresql/data
+      - ./databases/init/permis.sql:/docker-entrypoint-initdb.d/permis.sql:ro
+    ports:
+      - "5434:5432"
+    networks:
+      - dgtt-network
+
+  postgres-autres:
+    image: postgres:15-alpine
+    container_name: dgtt-postgres-autres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=autres_db
+      - POSTGRES_USER=dgtt_user
+      - POSTGRES_PASSWORD=dgtt_password_123
+    volumes:
+      - postgres_autres_data:/var/lib/postgresql/data
+      - ./databases/init/autres.sql:/docker-entrypoint-initdb.d/autres.sql:ro
+    ports:
+      - "5435:5432"
+    networks:
+      - dgtt-network
+
+  # Frontend
+  dgtt-frontend:
+    build: ./frontend
+    container_name: dgtt-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8081
+      - REACT_APP_AUTO_ECOLE_URL=http://localhost:8082
+      - REACT_APP_PERMIS_URL=http://localhost:8083
+      - REACT_APP_AUTRES_URL=http://localhost:8084
+    networks:
+      - dgtt-network
+
+volumes:
+  postgres_usager_data:
+  postgres_auto_ecole_data:
+  postgres_permis_data:
+  postgres_autres_data:
+
+networks:
+  dgtt-network:
+    driver: bridge

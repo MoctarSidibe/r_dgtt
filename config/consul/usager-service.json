@@ -1,0 +1,12 @@
+{
+  "service": {
+    "name": "usager-service",
+    "port": 8080,
+    "check": {
+      "http": "http://usager-service:8080/actuator/health",
+      "interval": "10s",
+      "timeout": "3s"
+    },
+    "tags": ["microservice", "user-management"]
+  }
+}

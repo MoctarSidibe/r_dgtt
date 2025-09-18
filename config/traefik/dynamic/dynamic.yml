@@ -1,0 +1,149 @@
+# Traefik Dynamic Configuration
+http:
+  middlewares:
+    # Security headers
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+
+    # Rate limiting
+    rate-limit:
+      rateLimit:
+        burst: 100
+        average: 50
+
+    # CORS
+    cors:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "http://localhost:3000"
+          - "https://dgtt-portail.com"
+        accessControlAllowHeaders:
+          - "Content-Type"
+          - "Authorization"
+          - "X-Requested-With"
+        accessControlMaxAge: 86400
+
+    # Basic auth for dashboard
+    dashboard-auth:
+      basicAuth:
+        users:
+          - "admin:$2y$10$8K1p/a0dL3x4H8K1p/a0dL3x4H8K1p/a0dL3x4H8K1p/a0dL3x4H8K1p/a0dL3x4H"
+
+  routers:
+    # Dashboard
+    dashboard:
+      rule: "Host(`traefik.dgtt-portail.com`)"
+      service: "api@internal"
+      middlewares:
+        - dashboard-auth
+        - security-headers
+
+    # Usager Service
+    usager-service:
+      rule: "Host(`api.dgtt-portail.com`) && PathPrefix(`/api/usager`)"
+      service: "usager-service"
+      middlewares:
+        - security-headers
+        - rate-limit
+        - cors
+
+    # Auto-École Service
+    auto-ecole-service:
+      rule: "Host(`api.dgtt-portail.com`) && PathPrefix(`/api/auto-ecole`)"
+      service: "auto-ecole-service"
+      middlewares:
+        - security-headers
+        - rate-limit
+        - cors
+
+    # Permis Service
+    permis-service:
+      rule: "Host(`api.dgtt-portail.com`) && PathPrefix(`/api/permis`)"
+      service: "permis-service"
+      middlewares:
+        - security-headers
+        - rate-limit
+        - cors
+
+    # Autres Service (External Partners)
+    autres-service:
+      rule: "Host(`api.dgtt-portail.com`) && PathPrefix(`/api/autres`)"
+      service: "autres-service"
+      middlewares:
+        - security-headers
+        - rate-limit
+        - cors
+
+    # API Documentation
+    swagger:
+      rule: "Host(`api.dgtt-portail.com`) && PathPrefix(`/swagger`)"
+      service: "swagger-ui"
+      middlewares:
+        - security-headers
+
+    redoc:
+      rule: "Host(`api.dgtt-portail.com`) && PathPrefix(`/redoc`)"
+      service: "redoc"
+      middlewares:
+        - security-headers
+
+    # Frontend
+    frontend:
+      rule: "Host(`dgtt-portail.com`) || Host(`localhost`)"
+      service: "frontend"
+      middlewares:
+        - security-headers
+
+  services:
+    usager-service:
+      loadBalancer:
+        servers:
+          - url: "http://usager-service:8080"
+
+    auto-ecole-service:
+      loadBalancer:
+        servers:
+          - url: "http://auto-ecole-service:8080"
+
+    permis-service:
+      loadBalancer:
+        servers:
+          - url: "http://permis-service:8080"
+
+    autres-service:
+      loadBalancer:
+        servers:
+          - url: "http://autres-service:8080"
+
+    swagger-ui:
+      loadBalancer:
+        servers:
+          - url: "http://swagger-ui:8080"
+
+    redoc:
+      loadBalancer:
+        servers:
+          - url: "http://redoc:8080"
+
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://dgtt-frontend:3000"

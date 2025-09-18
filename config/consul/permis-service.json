@@ -1,0 +1,12 @@
+{
+  "service": {
+    "name": "permis-service",
+    "port": 8080,
+    "check": {
+      "http": "http://permis-service:8080/actuator/health",
+      "interval": "10s",
+      "timeout": "3s"
+    },
+    "tags": ["microservice", "permis"]
+  }
+}
