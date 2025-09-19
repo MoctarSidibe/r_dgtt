@@ -2,12 +2,11 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+# Copy the entire project
+COPY . .
 
-# Copy source code
-COPY src/ src/
+# Change to usager service directory
+WORKDIR /app/microservices/usager-service
 
 # Build the application
 RUN ./mvnw clean package -DskipTests
